@@ -14,6 +14,11 @@ config/name="nasa game"
 config/features=PackedStringArray("4.7", "Forward Plus")
 config/icon="res://icon.svg"
 
+[autoload]
+
+CommonScripts="*uid://gqorpvjqe380"
+SettingsHandler="*uid://doatqhvlceprb"
+
 [display]
 
 window/stretch/mode="canvas_items"
