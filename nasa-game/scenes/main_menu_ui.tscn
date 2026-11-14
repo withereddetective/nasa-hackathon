@@ -2,8 +2,51 @@
 
 [node name="Main Menu UI" type="Control" unique_id=1701502392]
 layout_mode = 3
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
 grow_horizontal = 2
 grow_vertical = 2
+
+[node name="CenterContainer" type="CenterContainer" parent="." unique_id=1046037896]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -125.0
+offset_top = -77.5
+offset_right = 125.0
+offset_bottom = 77.5
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="CenterContainer" unique_id=1771735254]
+layout_mode = 2
+
+[node name="Title" type="RichTextLabel" parent="CenterContainer/VBoxContainer" unique_id=2019867320]
+custom_minimum_size = Vector2(250, 50)
+layout_mode = 2
+bbcode_enabled = true
+text = "[font_size=24]Nasa Game Title Idk[/font_size]"
+horizontal_alignment = 1
+
+[node name="Start Button" type="Button" parent="CenterContainer/VBoxContainer" unique_id=389737572]
+layout_mode = 2
+text = "Start Game"
+
+[node name="Settings Button" type="Button" parent="CenterContainer/VBoxContainer" unique_id=1901820162]
+layout_mode = 2
+text = "Settings"
+
+[node name="Quit Button" type="Button" parent="CenterContainer/VBoxContainer" unique_id=1735881239]
+layout_mode = 2
+text = "Exit to Desktop"
+
+[node name="Window" type="Window" parent="CenterContainer/VBoxContainer/Quit Button" unique_id=29881653]
+oversampling_override = 1.0
+title = "Are You Sure?"
+visible = false
