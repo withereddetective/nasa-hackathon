@@ -19,6 +19,7 @@ config/icon="res://icon.svg"
 
 CommonScripts="*uid://gqorpvjqe380"
 SettingsHandler="*uid://doatqhvlceprb"
+ResearchData="*uid://cls0megm876ib"
 
 [display]
 

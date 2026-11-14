@@ -15,6 +15,14 @@ var settings: SettingGroup = SettingGroup.new("master_settings",
 		[Setting.new("master_volume", 50, Setting.SettingType.FLOAT),
 		Setting.new("music_volume", 100, Setting.SettingType.FLOAT),
 		Setting.new("sound_effect_volume", 100, Setting.SettingType.FLOAT)]
+	),
+	SettingGroup.new("research_done",
+		[Setting.new("research1", false, Setting.SettingType.BOOLEAN),
+		Setting.new("research2", false, Setting.SettingType.BOOLEAN),
+		Setting.new("research3", false, Setting.SettingType.BOOLEAN),
+		Setting.new("research4", false, Setting.SettingType.BOOLEAN)
+		]
+	
 	)
 	]
 )

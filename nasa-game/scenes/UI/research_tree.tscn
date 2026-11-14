@@ -1,0 +1,24 @@
+[gd_scene format=3 uid="uid://djx2xlgu67bw3"]
+
+[ext_resource type="Script" uid="uid://cigibeoruvo4l" path="res://Scripts/UI/research_tree.gd" id="1_722nh"]
+[ext_resource type="Texture2D" uid="uid://b1528a8n38g1i" path="res://assets/SkillTree_BackgroundTIle.png" id="1_pgvqk"]
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_tsisu"]
+texture = ExtResource("1_pgvqk")
+axis_stretch_horizontal = 1
+axis_stretch_vertical = 1
+modulate_color = Color(0.2, 0.2, 0.2, 1)
+
+[node name="Research Tree" type="GraphEdit" unique_id=990564961]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxTexture_tsisu")
+show_grid = false
+snapping_enabled = false
+minimap_enabled = false
+show_menu = false
+script = ExtResource("1_722nh")
+research_node_path = "uid://ix8pw1on7gr3"

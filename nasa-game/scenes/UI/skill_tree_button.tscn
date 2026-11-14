@@ -1,0 +1,98 @@
+[gd_scene format=3 uid="uid://b6tm4fx0xshos"]
+
+[ext_resource type="Texture2D" uid="uid://4e3kutii11xo" path="res://assets/SkillTree_SelectionNode-1.png" id="1_axbld"]
+[ext_resource type="Texture2D" uid="uid://cvfc43er3ikb4" path="res://assets/SkillTree_SelectionNode-2.png.png" id="2_c2tab"]
+[ext_resource type="Script" uid="uid://mpgvb1mf6l3w" path="res://Scripts/UI/skill_tree_button.gd" id="3_c2tab"]
+[ext_resource type="Texture2D" uid="uid://j7yfsrj4pkwo" path="res://assets/9patch.png" id="4_foaik"]
+
+[node name="TextureButton" type="TextureButton" unique_id=781245054 node_paths=PackedStringArray("info_box_control", "info_box_description", "info_box_button")]
+texture_filter = 1
+custom_minimum_size = Vector2(38, 0)
+offset_right = 40.0
+offset_bottom = 40.0
+scale = Vector2(2, 2)
+toggle_mode = true
+texture_normal = ExtResource("1_axbld")
+texture_pressed = ExtResource("2_c2tab")
+texture_hover = ExtResource("1_axbld")
+texture_focused = ExtResource("2_c2tab")
+stretch_mode = 3
+script = ExtResource("3_c2tab")
+info_box_control = NodePath("Container")
+info_box_description = NodePath("Container/VBoxContainer/MarginContainer/RichTextLabel")
+info_box_button = NodePath("Container/VBoxContainer/MarginContainer2/Button")
+
+[node name="Container" type="Control" parent="." unique_id=1091794790]
+visible = false
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -20.0
+offset_top = -40.0
+offset_right = 286.0
+offset_bottom = 81.0
+grow_horizontal = 2
+grow_vertical = 0
+scale = Vector2(0.5, 0.5)
+offset_transform_enabled = true
+offset_transform_position = Vector2(0, 100)
+offset_transform_visual_only = false
+
+[node name="NinePatchRect" type="NinePatchRect" parent="Container" unique_id=358590304]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+texture = ExtResource("4_foaik")
+patch_margin_left = 20
+patch_margin_top = 20
+patch_margin_right = 20
+patch_margin_bottom = 20
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Container" unique_id=1702662879]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+alignment = 1
+
+[node name="MarginContainer" type="MarginContainer" parent="Container/VBoxContainer" unique_id=229337674]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="RichTextLabel" type="RichTextLabel" parent="Container/VBoxContainer/MarginContainer" unique_id=606275252]
+custom_minimum_size = Vector2(0, 50)
+clip_contents = false
+layout_mode = 2
+offset_transform_enabled = true
+bbcode_enabled = true
+text = "this is a descirption sdseomaf ma sdofmwm eomwema mewam"
+fit_content = true
+scroll_active = false
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="MarginContainer2" type="MarginContainer" parent="Container/VBoxContainer" unique_id=1994567861]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="Button" type="Button" parent="Container/VBoxContainer/MarginContainer2" unique_id=1263789055]
+layout_mode = 2
+text = "Buy"
+
+[connection signal="pressed" from="Container/VBoxContainer/MarginContainer2/Button" to="." method="buy_button"]
