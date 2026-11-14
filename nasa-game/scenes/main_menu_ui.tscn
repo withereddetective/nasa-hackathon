@@ -82,7 +82,61 @@ sprite_frames = SubResource("SpriteFrames_yf5fn")
 frame = 1
 frame_progress = 0.8410381
 
+[node name="SettingsPanel" type="PanelContainer" parent="." unique_id=793313596]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -68.0
+offset_top = -76.0
+offset_right = 68.0
+offset_bottom = 76.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="SettingsPanel" unique_id=1777470309]
+layout_mode = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="SettingsPanel/MarginContainer" unique_id=1966043514]
+layout_mode = 2
+
+[node name="RichTextLabel" type="RichTextLabel" parent="SettingsPanel/MarginContainer/VBoxContainer" unique_id=356651254]
+custom_minimum_size = Vector2(0, 25)
+layout_mode = 2
+text = "Settings"
+horizontal_alignment = 1
+
+[node name="VolumeLabel" type="Label" parent="SettingsPanel/MarginContainer/VBoxContainer" unique_id=1641028859]
+layout_mode = 2
+text = "Master Volume"
+horizontal_alignment = 1
+
+[node name="VolumeSlider" type="HSlider" parent="SettingsPanel/MarginContainer/VBoxContainer" unique_id=127917313]
+layout_mode = 2
+max_value = 1.0
+step = 0.05
+value = 1.0
+
+[node name="FullscreenCheck" type="CheckBox" parent="SettingsPanel/MarginContainer/VBoxContainer" unique_id=939523690]
+layout_mode = 2
+text = "Fullscreen"
+
+[node name="AccessibilityCheck" type="CheckBox" parent="SettingsPanel/MarginContainer/VBoxContainer" unique_id=1580573802]
+layout_mode = 2
+text = "Reduce Shake"
+
+[node name="BackButton" type="Button" parent="SettingsPanel/MarginContainer/VBoxContainer" unique_id=1232039144]
+layout_mode = 2
+text = "Back"
+
 [connection signal="pressed" from="CenterContainer/VBoxContainer/Start Button" to="." method="_on_start_button_pressed"]
 [connection signal="pressed" from="CenterContainer/VBoxContainer/Settings Button" to="." method="_on_settings_button_pressed"]
 [connection signal="pressed" from="CenterContainer/VBoxContainer/Quit Button" to="." method="_on_quit_button_pressed"]
 [connection signal="confirmed" from="CenterContainer/VBoxContainer/Quit Button/ConfirmationDialog" to="." method="_on_confirmation_dialog_confirmed"]
+[connection signal="value_changed" from="SettingsPanel/MarginContainer/VBoxContainer/VolumeSlider" to="." method="_on_volume_slider_value_changed"]
+[connection signal="toggled" from="SettingsPanel/MarginContainer/VBoxContainer/FullscreenCheck" to="." method="_on_fullscreen_check_toggled"]
+[connection signal="toggled" from="SettingsPanel/MarginContainer/VBoxContainer/AccessibilityCheck" to="." method="_on_accessibility_check_toggled"]
+[connection signal="pressed" from="SettingsPanel/MarginContainer/VBoxContainer/BackButton" to="." method="_on_back_button_pressed"]
