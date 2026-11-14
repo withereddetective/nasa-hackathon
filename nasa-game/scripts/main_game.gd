@@ -11,11 +11,52 @@ const DETAIL_TEXT: Color = Color("#15202b")
 const DETAIL_MUTED: Color = Color("#34414c")
 
 const VEHICLES: Array[Dictionary] = [
-	{"name": "Small-lift launcher", "capacity_kg": 1500, "cost": 6_000_000},
-	{"name": "Medium-lift launcher", "capacity_kg": 20_000, "cost": 30_000_000},
-	{"name": "Heavy-lift launcher", "capacity_kg": 65_000, "cost": 75_000_000},
-	{"name": "Super-heavy launcher", "capacity_kg": 100_000, "cost": 140_000_000},
+	{"name": "Small-lift launcher", "capacity_kg": 1500, "cost": 6_000_000, "animation": "small_lift"},
+	{"name": "Medium-lift launcher", "capacity_kg": 20_000, "cost": 30_000_000, "animation": "medium_lift"},
+	{"name": "Heavy-lift launcher", "capacity_kg": 65_000, "cost": 75_000_000, "animation": "heavy_lift"},
+	{"name": "Super-heavy launcher", "capacity_kg": 100_000, "cost": 140_000_000, "animation": "super_heavy"},
 ]
+
+const ROCKET_ANIMATION_FRAMES: Dictionary = {
+	"small_lift": [
+		"res://assets/small rocket/Small_OrbitRocket-1.png.png",
+		"res://assets/small rocket/Small_OrbitRocket-2.png.png",
+		"res://assets/small rocket/Small_OrbitRocket-3.png.png",
+		"res://assets/small rocket/Small_OrbitRocket-4.png.png",
+		"res://assets/small rocket/Small_OrbitRocket-5.png.png",
+		"res://assets/small rocket/Small_OrbitRocket-6.png.png",
+		"res://assets/small rocket/Small_OrbitRocket-7.png.png",
+	],
+	"medium_lift": [
+		"res://assets/small rocket/MediumOrbitRocket1.png.png",
+		"res://assets/small rocket/MediumOrbitRocket2.png.png",
+		"res://assets/small rocket/MediumOrbitRocket3.png.png",
+		"res://assets/small rocket/MediumOrbitRocket4.png.png",
+		"res://assets/small rocket/MediumOrbitRocket5.png.png",
+		"res://assets/small rocket/MediumOrbitRocket6.png.png",
+	],
+	"heavy_lift": [
+		"res://assets/small rocket/LargeOrbitRocket1.png.png",
+		"res://assets/small rocket/LargeOrbitRocket3.png.png",
+		"res://assets/small rocket/LargeOrbitRocket6.png.png",
+		"res://assets/small rocket/LargeOrbitRocket8.png.png",
+	],
+	"super_heavy": [
+		"res://assets/small rocket/LargeOrbitRocket1.png.png",
+		"res://assets/small rocket/LargeOrbitRocket2.png.png",
+		"res://assets/small rocket/LargeOrbitRocket3.png.png",
+		"res://assets/small rocket/LargeOrbitRocket4.png.png",
+		"res://assets/small rocket/LargeOrbitRocket6.png.png",
+		"res://assets/small rocket/LargeOrbitRocket7.png.png",
+		"res://assets/small rocket/LargeOrbitRocket8.png.png",
+	],
+}
+
+const LAUNCH_IDLE_DURATION: float = 1.0
+const LAUNCH_SLOWDOWN_DURATION: float = 2.5
+const LAUNCH_COMPLETE_DURATION: float = 2.0
+const LAUNCH_START_Y: float = 530.0
+const LAUNCH_TOP_Y: float = 64.0
 
 const INSTRUMENTS: Array[Dictionary] = [
 	{"name": "Communications Package", "mass_kg": 120, "cost": 500_000, "science": 5},
@@ -238,11 +279,41 @@ var settings_fullscreen_check: CheckBox
 var settings_reduce_shake_check: CheckBox
 var action_bar: HBoxContainer
 var reduce_shake: bool = false
+var settings_open: bool = false
+var monitor_ui_nodes: Array[Control] = []
+var monitor_flicker_timer: float = 4.0
+var monitor_flicker_frames: int = 0
+var monitor_ui_flickering: bool = false
+var launch_background: Sprite2D
+var launch_background_start_y: float = 0.0
+var launch_background_end_y: float = 0.0
+var launch_sprite: AnimatedSprite2D
+var launch_message: Label
+var launch_in_progress: bool = false
+var launch_phase: StringName = &""
+var launch_phase_elapsed: float = 0.0
+var launch_shake_time: float = 0.0
+var launch_animation_name: StringName = &""
+var launch_ascent_duration: float = 0.0
+var pending_mission_index: int = -1
+var pending_mission_reward: int = 0
+var pending_mission_science: int = 0
+
+@onready var game_background: Sprite2D = $Sprite2D
 
 
 func _ready() -> void:
+	randomize()
 	_build_interface()
+	_build_launch_screen()
 	_refresh_interface()
+
+
+func _process(delta: float) -> void:
+	if launch_in_progress:
+		_update_launch_sequence(delta)
+	else:
+		_update_monitor_flicker(delta)
 
 
 func _build_interface() -> void:
@@ -254,26 +325,31 @@ func _build_interface() -> void:
 	title.position = Vector2(110, 10)
 	title.size = Vector2(300, 26)
 	add_child(title)
+	_track_monitor_ui(title)
 
 	var subtitle := _make_label("MISSION CONTROL  /  EARTH ORBIT", 10, MUTED)
 	subtitle.position = Vector2(110, 37)
 	subtitle.size = Vector2(310, 18)
 	add_child(subtitle)
+	_track_monitor_ui(subtitle)
 
 	var budget_stat := _build_stat("PROGRAM BUDGET", "$0", ACCENT)
 	budget_stat.position = Vector2(525, 16)
 	budget_stat.size = Vector2(120, 45)
 	add_child(budget_stat)
+	_track_monitor_ui(budget_stat)
 
 	var science_stat := _build_stat("SCIENCE", "0 pts", GOLD)
 	science_stat.position = Vector2(670, 16)
 	science_stat.size = Vector2(100, 45)
 	add_child(science_stat)
+	_track_monitor_ui(science_stat)
 
 	mission_phase_label = _make_label("", 10, TEXT)
 	mission_phase_label.position = Vector2(110, 72)
 	mission_phase_label.size = Vector2(235, 20)
 	add_child(mission_phase_label)
+	_track_monitor_ui(mission_phase_label)
 
 	mission_scroll = ScrollContainer.new()
 	mission_scroll.position = Vector2(108, 96)
@@ -281,7 +357,7 @@ func _build_interface() -> void:
 	mission_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	mission_scroll.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
 	add_child(mission_scroll)
-	_build_quit_dialog()
+	_track_monitor_ui(mission_scroll)
 
 	mission_list = VBoxContainer.new()
 	mission_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -293,6 +369,7 @@ func _build_interface() -> void:
 	mission_summary.size = Vector2(420, 150)
 	mission_summary.add_theme_constant_override("separation", 4)
 	add_child(mission_summary)
+	_track_monitor_ui(mission_summary)
 
 	detail_scroll = ScrollContainer.new()
 	detail_scroll.position = Vector2(380, 258)
@@ -300,6 +377,7 @@ func _build_interface() -> void:
 	detail_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	detail_scroll.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
 	add_child(detail_scroll)
+	_track_monitor_ui(detail_scroll)
 	detail_column = VBoxContainer.new()
 	detail_column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	detail_column.add_theme_constant_override("separation", 4)
@@ -324,6 +402,7 @@ func _build_interface() -> void:
 	action_bar.add_child(quit_button)
 
 	_build_settings_panel()
+	_build_quit_dialog()
 
 
 func _build_quit_dialog() -> void:
@@ -378,6 +457,58 @@ func _build_settings_panel() -> void:
 	back_button.add_theme_color_override("font_color", Color("#15202b"))
 	back_button.pressed.connect(_hide_settings)
 	settings_panel.add_child(back_button)
+
+
+func _build_launch_screen() -> void:
+	launch_background = Sprite2D.new()
+	launch_background.texture = preload("res://assets/RocketSimulation.png")
+	launch_background.centered = true
+	launch_background.scale = Vector2(10.0, 10.0)
+	launch_background.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	launch_background.visible = false
+	var scaled_background_height: float = launch_background.texture.get_height() * launch_background.scale.y
+	launch_background_start_y = VIEWPORT_HEIGHT - scaled_background_height / 2.0
+	launch_background_end_y = scaled_background_height / 2.0
+	add_child(launch_background)
+
+	var sprite_frames := SpriteFrames.new()
+	sprite_frames.clear_all()
+	for animation_key: String in ROCKET_ANIMATION_FRAMES.keys():
+		sprite_frames.add_animation(animation_key)
+		sprite_frames.set_animation_loop(animation_key, false)
+		sprite_frames.set_animation_speed(animation_key, 1.0)
+		var animation_textures: Array[Texture2D] = []
+		for frame_path: String in ROCKET_ANIMATION_FRAMES[animation_key]:
+			var frame_texture := ResourceLoader.load(frame_path) as Texture2D
+			if frame_texture == null:
+				push_error("Could not load rocket animation frame: %s" % frame_path)
+				continue
+			animation_textures.append(frame_texture)
+			sprite_frames.add_frame(animation_key, frame_texture, 1.0)
+		if animation_textures.is_empty():
+			push_error("Rocket animation has no frames: %s" % animation_key)
+		elif animation_textures.size() >= 2:
+			var last_frame_index: int = animation_textures.size() - 1
+			sprite_frames.add_frame(animation_key, animation_textures[last_frame_index - 1], 1.0)
+			sprite_frames.add_frame(animation_key, animation_textures[last_frame_index], 1.0)
+			for frame_index in range(last_frame_index - 1, -1, -1):
+				sprite_frames.add_frame(animation_key, animation_textures[frame_index], 1.0)
+
+	launch_sprite = AnimatedSprite2D.new()
+	launch_sprite.sprite_frames = sprite_frames
+	launch_sprite.centered = true
+	launch_sprite.position = Vector2(VIEWPORT_WIDTH / 2.0, LAUNCH_START_Y)
+	launch_sprite.scale = Vector2.ONE
+	launch_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	launch_sprite.visible = false
+	add_child(launch_sprite)
+
+	launch_message = _make_label("", 16, TEXT)
+	launch_message.position = Vector2(110, 564)
+	launch_message.size = Vector2(640, 32)
+	launch_message.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	launch_message.visible = false
+	add_child(launch_message)
 
 
 func _build_stat(caption: String, initial_value: String, value_color: Color) -> VBoxContainer:
@@ -510,19 +641,19 @@ func _update_launch_status(_selected_index: int = -1) -> void:
 	var total_cost: int = vehicle["cost"] + instrument["cost"]
 	var is_complete: bool = completed_missions.has(mission["id"])
 
-	if is_complete:
-		launch_status.text = "Mission complete."
-	elif vehicle["capacity_kg"] < total_mass:
+	if vehicle["capacity_kg"] < total_mass:
 		launch_status.text = "Payload is %s kg. Select a launcher with more lift." % _format_mass(total_mass)
 	elif total_cost > budget:
 		launch_status.text = "%s required; current budget is %s." % [_format_money(total_cost), _format_money(budget)]
+	elif is_complete:
+		launch_status.text = "Mission complete. Replay available; no repeat money or science."
 	else:
 		launch_status.text = "Payload %s kg  /  Instrument science +%d pts" % [
 			_format_mass(total_mass),
 			instrument["science"],
 		]
 
-	launch_button.disabled = is_complete or vehicle["capacity_kg"] < total_mass or total_cost > budget
+	launch_button.disabled = vehicle["capacity_kg"] < total_mass or total_cost > budget
 
 
 func _select_mission(index: int) -> void:
@@ -532,8 +663,6 @@ func _select_mission(index: int) -> void:
 
 func _launch_selected_mission() -> void:
 	var mission: Dictionary = MISSIONS[selected_mission_index]
-	if completed_missions.has(mission["id"]):
-		return
 	var vehicle: Dictionary = VEHICLES[launch_vehicle_picker.get_item_metadata(launch_vehicle_picker.selected)]
 	var instrument: Dictionary = INSTRUMENTS[instrument_picker.get_item_metadata(instrument_picker.selected)]
 	var total_mass: int = mission["mass_kg"] + instrument["mass_kg"]
@@ -541,14 +670,117 @@ func _launch_selected_mission() -> void:
 	if vehicle["capacity_kg"] < total_mass or total_cost > budget:
 		_update_launch_status()
 		return
+	var animation_name := StringName(vehicle["animation"])
+	var has_rocket_animation: bool = launch_sprite.sprite_frames.has_animation(animation_name)
+	if has_rocket_animation:
+		has_rocket_animation = launch_sprite.sprite_frames.get_frame_count(animation_name) > 0
+	if not has_rocket_animation:
+		push_error("The selected launch vehicle has no available rocket animation.")
+		return
 
 	budget -= total_cost
-	budget += mission["reward"]
-	science += mission["science"] + instrument["science"]
-	completed_missions.append(mission["id"])
-	if completed_missions.size() < MISSIONS.size():
-		selected_mission_index = completed_missions.size()
+	pending_mission_index = selected_mission_index
+	pending_mission_reward = mission["reward"]
+	pending_mission_science = mission["science"] + instrument["science"]
+	_start_launch_sequence(vehicle)
+
+
+func _start_launch_sequence(vehicle: Dictionary) -> void:
+	_reset_monitor_flicker()
+	_set_monitor_ui_visibility(false)
+	action_bar.hide()
+	game_background.hide()
+	launch_background.show()
+	launch_sprite.show()
+	launch_message.show()
+
+	launch_animation_name = StringName(vehicle["animation"])
+	launch_sprite.animation = launch_animation_name
+	launch_sprite.stop()
+	launch_sprite.position = Vector2(VIEWPORT_WIDTH / 2.0, LAUNCH_START_Y)
+	launch_background.position = Vector2(VIEWPORT_WIDTH / 2.0, launch_background_start_y)
+	launch_ascent_duration = float(launch_sprite.sprite_frames.get_frame_count(launch_animation_name))
+	launch_phase = &"idle"
+	launch_phase_elapsed = 0.0
+	launch_shake_time = 0.0
+	launch_in_progress = true
+	launch_message.text = "PRE-LAUNCH CHECKS  /  " + MISSIONS[pending_mission_index]["name"]
+
+
+func _update_launch_sequence(delta: float) -> void:
+	launch_phase_elapsed += delta
+	match launch_phase:
+		&"idle":
+			if launch_phase_elapsed >= LAUNCH_IDLE_DURATION:
+				launch_phase = &"ascent"
+				launch_phase_elapsed = 0.0
+				launch_sprite.play(launch_animation_name)
+				launch_message.text = "IGNITION  /  ASCENT"
+		&"ascent":
+			var progress: float = minf(launch_phase_elapsed / launch_ascent_duration, 1.0)
+			var eased_progress: float = 3.0 * progress * progress - 2.0 * progress * progress * progress
+			launch_background.position.y = lerpf(launch_background_start_y, launch_background_end_y, eased_progress)
+			launch_sprite.position.y = lerpf(LAUNCH_START_Y, LAUNCH_TOP_Y, eased_progress)
+			var shake_multiplier: float = 0.35 if reduce_shake else 1.0
+			var shake_amplitude: float = lerpf(11.0, 0.0, progress) * shake_multiplier
+			var shake_speed: float = lerpf(18.0, 2.0, progress)
+			_apply_launch_shake(shake_amplitude, shake_speed, delta)
+			if launch_phase_elapsed >= launch_ascent_duration:
+				launch_background.position.y = launch_background_end_y
+				launch_sprite.position.y = LAUNCH_TOP_Y
+				launch_sprite.pause()
+				launch_phase = &"slowdown"
+				launch_phase_elapsed = 0.0
+				launch_message.text = "ASCENT COMPLETE  /  VEHICLE COASTING"
+		&"slowdown":
+			var progress: float = minf(launch_phase_elapsed / LAUNCH_SLOWDOWN_DURATION, 1.0)
+			launch_sprite.position.y = LAUNCH_TOP_Y
+			var shake_multiplier: float = 0.35 if reduce_shake else 1.0
+			var shake_amplitude: float = sin(progress * PI) * 5.0 * shake_multiplier
+			var shake_speed: float = lerpf(8.0, 1.0, progress)
+			_apply_launch_shake(shake_amplitude, shake_speed, delta)
+			if launch_phase_elapsed >= LAUNCH_SLOWDOWN_DURATION:
+				launch_sprite.position.x = VIEWPORT_WIDTH / 2.0
+				launch_sprite.position.y = LAUNCH_TOP_Y
+				launch_phase = &"complete"
+				launch_phase_elapsed = 0.0
+				launch_message.text = "MISSION COMPLETE"
+				_complete_launch()
+		&"complete":
+			if launch_phase_elapsed >= LAUNCH_COMPLETE_DURATION:
+				_return_to_mission_screen()
+
+
+func _apply_launch_shake(amplitude: float, shake_speed: float, delta: float) -> void:
+	launch_shake_time += delta * shake_speed
+	launch_sprite.position.x = VIEWPORT_WIDTH / 2.0 + sin(launch_shake_time) * amplitude
+
+
+func _complete_launch() -> void:
+	if pending_mission_index < 0:
+		push_error("Cannot complete a launch without a pending mission.")
+		return
+
+	var mission: Dictionary = MISSIONS[pending_mission_index]
+	if not completed_missions.has(mission["id"]):
+		budget += pending_mission_reward
+		science += pending_mission_science
+		completed_missions.append(mission["id"])
+		if completed_missions.size() < MISSIONS.size():
+			selected_mission_index = completed_missions.size()
 	_refresh_interface()
+
+
+func _return_to_mission_screen() -> void:
+	launch_in_progress = false
+	launch_phase = &""
+	launch_sprite.hide()
+	launch_message.hide()
+	launch_background.hide()
+	game_background.show()
+	action_bar.show()
+	_set_monitor_ui_visibility(true)
+	_reset_monitor_flicker()
 
 
 func _reveal_mission_button(button: Control) -> void:
@@ -564,21 +796,54 @@ func _quit_game() -> void:
 
 
 func _show_settings() -> void:
-	mission_phase_label.hide()
-	mission_scroll.hide()
-	mission_summary.hide()
-	detail_scroll.hide()
+	_reset_monitor_flicker()
+	settings_open = true
+	_set_monitor_ui_visibility(false)
 	settings_button.hide()
 	settings_panel.show()
 
 
 func _hide_settings() -> void:
-	mission_phase_label.show()
-	mission_scroll.show()
-	mission_summary.show()
-	detail_scroll.show()
+	settings_open = false
+	_set_monitor_ui_visibility(true)
 	settings_button.show()
 	settings_panel.hide()
+	_reset_monitor_flicker()
+
+
+func _track_monitor_ui(control: Control) -> void:
+	monitor_ui_nodes.append(control)
+
+
+func _set_monitor_ui_visibility(is_visible: bool) -> void:
+	for control: Control in monitor_ui_nodes:
+		control.visible = is_visible
+	monitor_ui_flickering = false
+	monitor_flicker_frames = 0
+
+
+func _reset_monitor_flicker() -> void:
+	_set_monitor_ui_visibility(true)
+	monitor_flicker_timer = randf_range(3.0, 6.0)
+
+
+func _update_monitor_flicker(delta: float) -> void:
+	if settings_open or quit_dialog.visible:
+		return
+
+	if monitor_ui_flickering:
+		monitor_flicker_frames -= 1
+		if monitor_flicker_frames <= 0:
+			monitor_ui_flickering = false
+			_set_monitor_ui_visibility(true)
+			monitor_flicker_timer = randf_range(3.0, 6.0)
+		return
+
+	monitor_flicker_timer -= delta
+	if monitor_flicker_timer <= 0.0:
+		_set_monitor_ui_visibility(false)
+		monitor_ui_flickering = true
+		monitor_flicker_frames = randi_range(2, 4)
 
 
 func _on_settings_volume_changed(value: float) -> void:
