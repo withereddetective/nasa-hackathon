@@ -1,0 +1,208 @@
+extends RefCounted
+
+const VIEWPORT_WIDTH: int = 860
+const VIEWPORT_HEIGHT: int = 640
+const STARTING_BUDGET: int = 20_000_000
+
+const VEHICLES: Array[Dictionary] = [
+	{"name": "Small-lift launcher", "capacity_kg": 1500, "cost": 6_000_000, "animation": "small_lift"},
+	{"name": "Medium-lift launcher", "capacity_kg": 20_000, "cost": 30_000_000, "animation": "medium_lift"},
+	{"name": "Heavy-lift launcher", "capacity_kg": 65_000, "cost": 75_000_000, "animation": "heavy_lift"},
+	{"name": "Super-heavy launcher", "capacity_kg": 100_000, "cost": 140_000_000, "animation": "super_heavy"},
+]
+
+const INSTRUMENTS: Array[Dictionary] = [
+	{"name": "Communications Package", "mass_kg": 120, "cost": 500_000, "science": 5},
+	{"name": "Optical Telescope", "mass_kg": 320, "cost": 1_200_000, "science": 20},
+	{"name": "Multispectral Imager", "mass_kg": 180, "cost": 850_000, "science": 15},
+	{"name": "Infrared Spectrometer", "mass_kg": 260, "cost": 1_100_000, "science": 25},
+	{"name": "Ground-Penetrating Radar", "mass_kg": 450, "cost": 1_600_000, "science": 30},
+	{"name": "Drill and Sample Analyzer", "mass_kg": 520, "cost": 2_000_000, "science": 35},
+	{"name": "Mass Spectrometer", "mass_kg": 240, "cost": 1_300_000, "science": 28},
+	{"name": "Laser Altimeter", "mass_kg": 160, "cost": 750_000, "science": 18},
+]
+
+const MISSIONS: Array[Dictionary] = [
+	{
+		"id": "first_satellite",
+		"name": "First Satellite",
+		"phase": "PHASE 1  /  ORBITAL FOUNDATIONS",
+		"mass_kg": 280,
+		"reward": 14_000_000,
+		"science": 20,
+		"brief": "Place a small communications satellite in low Earth orbit. A reliable first launch establishes the foundation for every mission that follows.",
+		"objectives": [
+			"Launch a 280 kg satellite to low Earth orbit.",
+			"Keep the launch cost within the available budget.",
+			"Return the first science data to mission control.",
+		],
+	},
+	{
+		"id": "space_telescope",
+		"name": "Eyes on the Sky",
+		"phase": "PHASE 1  /  ORBITAL FOUNDATIONS",
+		"mass_kg": 920,
+		"reward": 20_000_000,
+		"science": 45,
+		"brief": "Deploy an orbital space telescope. Its observations expand the science program and help identify future exploration targets.",
+		"objectives": [
+			"Launch the 920 kg telescope to orbit.",
+			"Use its observations to earn 45 science.",
+			"Complete the contract to unlock the station mission.",
+		],
+	},
+	{
+		"id": "station_core",
+		"name": "Station Core",
+		"phase": "PHASE 1  /  ORBITAL FOUNDATIONS",
+		"mass_kg": 8200,
+		"reward": 44_000_000,
+		"science": 90,
+		"brief": "Launch the first large module of a low Earth orbit station. This heavy payload introduces the medium-lift class and modular construction.",
+		"objectives": [
+			"Deliver an 8,200 kg station core to orbit.",
+			"Select a vehicle with sufficient lift capacity.",
+			"Complete the Phase 1 station contract.",
+		],
+	},
+	{
+		"id": "lunar_relay",
+		"name": "Lunar Relay Network",
+		"phase": "PHASE 2  /  LUNAR EXPLORATION",
+		"mass_kg": 1100,
+		"reward": 25_000_000,
+		"science": 35,
+		"brief": "Place a relay satellite in lunar orbit so mission control can reach spacecraft on the Moon's far side.",
+		"objectives": [
+			"Launch a lunar communications relay.",
+			"Establish a line-of-sight link around the Moon.",
+			"Return the relay mission's science data.",
+		],
+	},
+	{
+		"id": "lunar_lander",
+		"name": "First Lunar Landing",
+		"phase": "PHASE 2  /  LUNAR EXPLORATION",
+		"mass_kg": 3200,
+		"reward": 45_000_000,
+		"science": 55,
+		"brief": "Land an uncrewed science craft on the Moon and prove the program can deliver payloads beyond Earth orbit.",
+		"objectives": [
+			"Deliver a lander to the lunar surface.",
+			"Survive the landing and extreme thermal cycle.",
+			"Transmit the first surface science results.",
+		],
+	},
+	{
+		"id": "lunar_rover",
+		"name": "South Pole Rover",
+		"phase": "PHASE 2  /  LUNAR EXPLORATION",
+		"mass_kg": 5600,
+		"reward": 55_000_000,
+		"science": 70,
+		"brief": "Explore the lunar south pole for water ice and mark a safe site for future surface missions.",
+		"objectives": [
+			"Land a rover near the lunar south pole.",
+			"Survey for water ice and safe terrain.",
+			"Send the site survey back to Earth.",
+		],
+	},
+	{
+		"id": "asteroid_miner",
+		"name": "Asteroid Prospecting",
+		"phase": "PHASE 3  /  OFF-WORLD INDUSTRY",
+		"mass_kg": 26000,
+		"reward": 85_000_000,
+		"science": 95,
+		"brief": "Rendezvous with a near-Earth asteroid and survey it for water ice and valuable metals.",
+		"objectives": [
+			"Rendezvous with the selected asteroid.",
+			"Map its composition and accessible resources.",
+			"Return the prospecting report to Earth.",
+		],
+	},
+	{
+		"id": "fuel_depot",
+		"name": "Orbital Fuel Depot",
+		"phase": "PHASE 3  /  OFF-WORLD INDUSTRY",
+		"mass_kg": 36000,
+		"reward": 110_000_000,
+		"science": 110,
+		"brief": "Deliver a modular fuel depot to orbit and prepare the first off-world supply chain.",
+		"objectives": [
+			"Deploy the orbital fuel depot.",
+			"Store water-derived propellant in orbit.",
+			"Demonstrate a future refueling destination.",
+		],
+	},
+	{
+		"id": "lunar_isru",
+		"name": "Lunar ISRU Plant",
+		"phase": "PHASE 4  /  LUNAR COLONIZATION",
+		"mass_kg": 55000,
+		"reward": 130_000_000,
+		"science": 135,
+		"brief": "Land an automated refinery to turn local regolith and ice into useful water, oxygen, and propellant.",
+		"objectives": [
+			"Deliver the refinery to a rover-surveyed site.",
+			"Demonstrate local resource processing.",
+			"Prepare the site for permanent habitation.",
+		],
+	},
+	{
+		"id": "lunar_colony",
+		"name": "Lunar Research Outpost",
+		"phase": "PHASE 4  /  LUNAR COLONIZATION",
+		"mass_kg": 65000,
+		"reward": 160_000_000,
+		"science": 170,
+		"brief": "Establish a powered lunar habitat and staffed research center at the surveyed south-pole site.",
+		"objectives": [
+			"Deploy habitat and research modules.",
+			"Provide redundant surface power.",
+			"Establish a permanent research outpost.",
+		],
+	},
+	{
+		"id": "mars_relay",
+		"name": "Mars Communications",
+		"phase": "PHASE 5  /  MARS COLONY",
+		"mass_kg": 1800,
+		"reward": 30_000_000,
+		"science": 60,
+		"brief": "Deploy communications spacecraft ahead of the first heavy Mars surface missions.",
+		"objectives": [
+			"Place relay spacecraft around Mars.",
+			"Confirm reliable links with Earth.",
+			"Prepare the network for surface operations.",
+		],
+	},
+	{
+		"id": "mars_rover",
+		"name": "Mars Aquifer Survey",
+		"phase": "PHASE 5  /  MARS COLONY",
+		"mass_kg": 18000,
+		"reward": 60_000_000,
+		"science": 120,
+		"brief": "Send an autonomous rover to identify water resources and a safe location for a future colony.",
+		"objectives": [
+			"Land an autonomous Mars rover.",
+			"Survey candidate aquifer and landing sites.",
+			"Transmit results despite signal delay.",
+		],
+	},
+	{
+		"id": "mars_colony",
+		"name": "First Mars Colony",
+		"phase": "PHASE 5  /  MARS COLONY",
+		"mass_kg": 92000,
+		"reward": 220_000_000,
+		"science": 250,
+		"brief": "Deliver the first autonomous colony modules, local fuel plant, and surface power system to Mars.",
+		"objectives": [
+			"Land colony modules at the surveyed site.",
+			"Establish local fuel and reliable power.",
+			"Prepare the habitat for a sustained crew.",
+		],
+	},
+]
