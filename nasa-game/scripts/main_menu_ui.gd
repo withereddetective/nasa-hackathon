@@ -9,6 +9,8 @@ func _ready() -> void:
 	# if you want the buttons to work while the tree's paused, set the buttons' process_mode variable to 
 	# either always or on paused
 	quit_dialog.hide()
+	$AnimatedSprite2D.sprite_frames.set_animation_loop("default", true)
+	$AnimatedSprite2D.play("default")
 
 func _on_start_button_pressed() -> void:
 	hide()

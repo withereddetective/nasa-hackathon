@@ -22,6 +22,8 @@ SettingsHandler="*uid://doatqhvlceprb"
 
 [display]
 
+window/size/viewport_width=860
+window/size/viewport_height=640
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
 
