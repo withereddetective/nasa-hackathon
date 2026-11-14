@@ -1,5 +1,7 @@
 [gd_scene format=3 uid="uid://bvao2l0ohr3ef"]
 
+[ext_resource type="Script" uid="uid://bekykkrdxqalv" path="res://scripts/main_menu_ui.gd" id="1_rayio"]
+
 [node name="Main Menu UI" type="Control" unique_id=1701502392]
 layout_mode = 3
 anchors_preset = 8
@@ -9,6 +11,8 @@ anchor_right = 0.5
 anchor_bottom = 0.5
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 1
+script = ExtResource("1_rayio")
 
 [node name="CenterContainer" type="CenterContainer" parent="." unique_id=1046037896]
 layout_mode = 1
@@ -46,7 +50,11 @@ text = "Settings"
 layout_mode = 2
 text = "Exit to Desktop"
 
-[node name="Window" type="Window" parent="CenterContainer/VBoxContainer/Quit Button" unique_id=29881653]
-oversampling_override = 1.0
-title = "Are You Sure?"
-visible = false
+[node name="ConfirmationDialog" type="ConfirmationDialog" parent="CenterContainer/VBoxContainer/Quit Button" unique_id=370776548]
+ok_button_text = "Quit"
+dialog_text = "Are you sure you want to quit?"
+
+[connection signal="pressed" from="CenterContainer/VBoxContainer/Start Button" to="." method="_on_start_button_pressed"]
+[connection signal="pressed" from="CenterContainer/VBoxContainer/Settings Button" to="." method="_on_settings_button_pressed"]
+[connection signal="pressed" from="CenterContainer/VBoxContainer/Quit Button" to="." method="_on_quit_button_pressed"]
+[connection signal="confirmed" from="CenterContainer/VBoxContainer/Quit Button/ConfirmationDialog" to="." method="_on_confirmation_dialog_confirmed"]
