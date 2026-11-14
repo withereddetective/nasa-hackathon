@@ -1,6 +1,6 @@
 extends Control
 
-@export_file("main_game.tscn") var main_game_scene: String
+@export_file("*.tscn") var main_game_scene: String = "res://scenes/main_game.tscn"
 @onready var quit_dialog: ConfirmationDialog = $"CenterContainer/VBoxContainer/Quit Button/ConfirmationDialog"
 @onready var settings_panel: PanelContainer = $SettingsPanel
 @onready var volume_slider: HSlider = $SettingsPanel/MarginContainer/VBoxContainer/VolumeSlider
@@ -22,8 +22,9 @@ func _ready() -> void:
 	fullscreen_check.button_pressed = (DisplayServer.window_get_mode() == DisplayServer.WINDOW_MODE_FULLSCREEN)
 
 func _on_start_button_pressed() -> void:
-	hide()
-	get_tree().paused = false
+	var error: Error = get_tree().change_scene_to_file(main_game_scene)
+	if error != OK:
+		push_error("Could not open the main game scene: %s" % error_string(error))
 
 func _on_settings_button_pressed() -> void:
 	main_menu.hide()
