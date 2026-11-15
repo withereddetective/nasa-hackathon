@@ -8,6 +8,11 @@ const DETAIL_TEXT: Color = Color("#15202b")
 const DETAIL_MUTED: Color = Color("#34414c")
 const GameData = preload("res://Scripts/game_data.gd")
 const LaunchSequence = preload("res://Scripts/launch_sequence.gd")
+const MAIN_MENU_BACKGROUND_TEXTURES: Array[String] = [
+	"res://assets/small rocket/MainMenu-1.png.png",
+	"res://assets/small rocket/MainMenu-2.png.png",
+	"res://assets/small rocket/MainMenu-3.png.png",
+]
 
 static var budget: int = GameData.STARTING_BUDGET
 var completed_missions: Array[String] = []
@@ -463,9 +468,62 @@ func _mission_failure_reason(mission: Dictionary, vehicle: Dictionary, instrumen
 	return ""
 
 func _return_to_mission_screen() -> void:
+	if completed_missions.size() >= GameData.MISSIONS.size():
+		_show_campaign_complete_screen()
+		return
+
 	game_background.show()
 	action_bar.show()
 	_set_monitor_ui_visibility(true)
+
+
+func _show_campaign_complete_screen() -> void:
+	game_background.hide()
+	for child in get_children():
+		if child == game_background or child == launch_sequence:
+			continue
+		if child is CanvasItem:
+			child.hide()
+		elif child is Window:
+			child.hide()
+
+	var background_frames := SpriteFrames.new()
+	background_frames.clear_all()
+	background_frames.add_animation("default")
+	background_frames.set_animation_loop("default", true)
+	background_frames.set_animation_speed("default", 3.0)
+	for texture_path: String in MAIN_MENU_BACKGROUND_TEXTURES:
+		var background_texture := ResourceLoader.load(texture_path) as Texture2D
+		if background_texture == null:
+			push_error("Could not load title screen background: %s" % texture_path)
+			continue
+		background_frames.add_frame("default", background_texture, 2.0)
+	if background_frames.get_frame_count("default") == 0:
+		push_error("Could not build the mission-complete title background.")
+		return
+
+	var title_background := AnimatedSprite2D.new()
+	title_background.sprite_frames = background_frames
+	title_background.position = Vector2(
+		GameData.VIEWPORT_WIDTH / 2.0,
+		GameData.VIEWPORT_HEIGHT / 2.0
+	)
+	title_background.scale = Vector2(10.0, 10.0)
+	title_background.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	add_child(title_background)
+	title_background.play("default")
+
+	var completion_label := Label.new()
+	completion_label.text = "Mission Complete!"
+	completion_label.add_theme_font_size_override("font_size", 32)
+	completion_label.add_theme_color_override("font_color", TEXT)
+	completion_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	completion_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	completion_label.position = Vector2(170, 265)
+	completion_label.size = Vector2(520, 80)
+	completion_label.z_index = 1
+	add_child(completion_label)
+
 
 func _reveal_mission_button(button: Control) -> void:
 	mission_scroll.ensure_control_visible(button)

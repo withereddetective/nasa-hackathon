@@ -159,6 +159,8 @@ func start_launch(
 	launch_animation_name = animation_name
 	launch_sprite.animation = launch_animation_name
 	launch_sprite.stop()
+	launch_sprite.rotation = 0.0
+	rotate_tween_started = false
 	launch_sprite.position = Vector2(GameData.VIEWPORT_WIDTH / 2.0, LAUNCH_START_Y)
 	launch_background.position = Vector2(GameData.VIEWPORT_WIDTH / 2.0, launch_background_start_y)
 	launch_background.show()
