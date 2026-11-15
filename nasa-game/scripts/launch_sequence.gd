@@ -3,7 +3,7 @@ extends Node2D
 signal award_mission
 signal finished
 
-const GameData = preload("res://scripts/game_data.gd")
+const GameData = preload("res://Scripts/game_data.gd")
 const TEXT: Color = Color("#edf4fb")
 const LAUNCH_IDLE_DURATION: float = 1.0
 const LAUNCH_SLOWDOWN_DURATION: float = 2.5

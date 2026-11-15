@@ -1,5 +1,7 @@
 extends Node
 
+var science: int = 0
+
 var phase_one: Array[ResearchNodeInfo] = [
 	ResearchNodeInfo.new(
 		"placeholder one", "placeholder1", 1, "Places the holder."),

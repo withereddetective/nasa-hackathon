@@ -6,11 +6,10 @@ const ACCENT: Color = Color("#72e0ad")
 const GOLD: Color = Color("#f4c76b")
 const DETAIL_TEXT: Color = Color("#15202b")
 const DETAIL_MUTED: Color = Color("#34414c")
-const GameData = preload("res://scripts/game_data.gd")
-const LaunchSequence = preload("res://scripts/launch_sequence.gd")
+const GameData = preload("res://Scripts/game_data.gd")
+const LaunchSequence = preload("res://Scripts/launch_sequence.gd")
 
 var budget: int = GameData.STARTING_BUDGET
-var science: int = 0
 var completed_missions: Array[String] = []
 var selected_mission_index: int = 0
 
@@ -84,13 +83,11 @@ func _build_interface() -> void:
 	budget_stat.position = Vector2(525, 16)
 	budget_stat.size = Vector2(120, 45)
 	add_child(budget_stat)
-	_track_monitor_ui(budget_stat)
 
 	var science_stat := _build_stat("SCIENCE", "0 pts", GOLD)
 	science_stat.position = Vector2(670, 16)
 	science_stat.size = Vector2(100, 45)
 	add_child(science_stat)
-	_track_monitor_ui(science_stat)
 
 	mission_phase_label = _make_label("", 10, TEXT)
 	mission_phase_label.position = Vector2(110, 72)
@@ -220,10 +217,14 @@ func _build_stat(caption: String, initial_value: String, value_color: Color) -> 
 
 
 func _refresh_interface() -> void:
-	budget_value.text = _format_money(budget)
-	science_value.text = "%d pts" % science
+	_refresh_resource_display()
 	_refresh_mission_list()
 	_refresh_mission_details()
+
+
+func _refresh_resource_display() -> void:
+	budget_value.text = _format_money(budget)
+	science_value.text = "%d pts" % ResearchData.science
 
 
 func _refresh_mission_list() -> void:
@@ -231,9 +232,14 @@ func _refresh_mission_list() -> void:
 	var selected_button: Button
 	for index in range(GameData.MISSIONS.size()):
 		var mission: Dictionary = GameData.MISSIONS[index]
-		var is_locked: bool = index > completed_missions.size()
+		var is_order_locked: bool = index > completed_missions.size()
+		var is_science_locked: bool = ResearchData.science < mission["science_required"]
 		var is_complete: bool = completed_missions.has(mission["id"])
-		var state := "COMPLETE" if is_complete else ("LOCKED" if is_locked else "AVAILABLE")
+		var state := "COMPLETE" if is_complete else (
+			"LOCKED" if is_order_locked else (
+				"NEEDS %d SCIENCE" % mission["science_required"] if is_science_locked else "AVAILABLE"
+			)
+		)
 		var button_text := "%02d %s\n%s • %s kg" % [
 			index + 1,
 			mission["name"],
@@ -243,7 +249,7 @@ func _refresh_mission_list() -> void:
 		var button := _make_button(button_text, index == selected_mission_index)
 		button.custom_minimum_size = Vector2(225, 52)
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		button.disabled = is_locked
+		button.disabled = is_order_locked or is_science_locked
 		button.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		var mission_index := index
 		button.pressed.connect(func() -> void: _select_mission(mission_index))
@@ -267,8 +273,8 @@ func _refresh_mission_details() -> void:
 	brief_label.custom_minimum_size.y = 42
 	mission_summary.add_child(brief_label)
 	mission_summary.add_child(_make_label(
-		"CONTRACT  %s     MISSION SCIENCE  %d pts"
-		% [_format_money(mission["reward"]), mission["science"]],
+		"CONTRACT  %s     SCIENCE +%d pts  /  REQUIRES %d"
+		% [_format_money(mission["reward"]), mission["science"], mission["science_required"]],
 		11,
 		TEXT
 	))
@@ -277,7 +283,7 @@ func _refresh_mission_details() -> void:
 	for objective: String in mission["objectives"]:
 		detail_column.add_child(_make_label("- " + objective, 10, DETAIL_TEXT))
 
-	var instrument_label := _make_label("SCIENTIFIC INSTRUMENT  /  ALL AVAILABLE", 10, DETAIL_TEXT)
+	var instrument_label := _make_label("SCIENTIFIC INSTRUMENT  /  RESEARCH UNLOCKS", 10, DETAIL_TEXT)
 	detail_column.add_child(instrument_label)
 	instrument_picker = OptionButton.new()
 	instrument_picker.custom_minimum_size.y = 26
@@ -285,25 +291,39 @@ func _refresh_mission_details() -> void:
 	_style_picker(instrument_picker)
 	for index in range(GameData.INSTRUMENTS.size()):
 		var instrument: Dictionary = GameData.INSTRUMENTS[index]
+		var is_locked: bool = ResearchData.science < instrument["science_required"]
 		instrument_picker.add_item(
-			"%s  |  %s kg  |  %s"
-			% [instrument["name"], _format_mass(instrument["mass_kg"]), _format_money(instrument["cost"])]
+			"%s  |  %s kg  |  %s%s"
+			% [
+				instrument["name"],
+				_format_mass(instrument["mass_kg"]),
+				_format_money(instrument["cost"]),
+				"  |  NEEDS %d SCIENCE" % instrument["science_required"] if is_locked else "",
+			]
 		)
 		instrument_picker.set_item_metadata(index, index)
+		instrument_picker.set_item_disabled(index, is_locked)
 	detail_column.add_child(instrument_picker)
 
-	detail_column.add_child(_make_label("LAUNCH VEHICLE  /  ALL CLASSES AVAILABLE", 10, DETAIL_TEXT))
+	detail_column.add_child(_make_label("LAUNCH VEHICLE  /  RESEARCH UNLOCKS", 10, DETAIL_TEXT))
 	launch_vehicle_picker = OptionButton.new()
 	launch_vehicle_picker.custom_minimum_size.y = 26
 	launch_vehicle_picker.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_style_picker(launch_vehicle_picker)
 	for index in range(GameData.VEHICLES.size()):
 		var vehicle: Dictionary = GameData.VEHICLES[index]
+		var is_locked: bool = ResearchData.science < vehicle["science_required"]
 		launch_vehicle_picker.add_item(
-			"%s  |  %s kg  |  %s"
-			% [vehicle["name"], _format_mass(vehicle["capacity_kg"]), _format_money(vehicle["cost"])]
+			"%s  |  %s kg  |  %s%s"
+			% [
+				vehicle["name"],
+				_format_mass(vehicle["capacity_kg"]),
+				_format_money(vehicle["cost"]),
+				"  |  NEEDS %d SCIENCE" % vehicle["science_required"] if is_locked else "",
+			]
 		)
 		launch_vehicle_picker.set_item_metadata(index, index)
+		launch_vehicle_picker.set_item_disabled(index, is_locked)
 	detail_column.add_child(launch_vehicle_picker)
 
 	launch_status = _make_label("", 10, DETAIL_MUTED)
@@ -322,10 +342,15 @@ func _refresh_mission_details() -> void:
 
 func _default_vehicle_index(mission: Dictionary, instrument: Dictionary) -> int:
 	var required_mass: int = mission["mass_kg"] + instrument["mass_kg"]
+	var fallback_index: int = 0
 	for index in range(GameData.VEHICLES.size()):
-		if GameData.VEHICLES[index]["capacity_kg"] >= required_mass:
+		var vehicle: Dictionary = GameData.VEHICLES[index]
+		if ResearchData.science < vehicle["science_required"]:
+			continue
+		fallback_index = index
+		if vehicle["capacity_kg"] >= required_mass:
 			return index
-	return GameData.VEHICLES.size() - 1
+	return fallback_index
 
 
 func _update_launch_status(_selected_index: int = -1) -> void:
@@ -335,8 +360,14 @@ func _update_launch_status(_selected_index: int = -1) -> void:
 	var total_mass: int = mission["mass_kg"] + instrument["mass_kg"]
 	var total_cost: int = vehicle["cost"] + instrument["cost"]
 	var is_complete: bool = completed_missions.has(mission["id"])
+	var is_mission_locked: bool = not _is_mission_unlocked(selected_mission_index)
 
-	if vehicle["capacity_kg"] < total_mass:
+	if is_mission_locked:
+		launch_status.text = "Requires %d science; current research is %d." % [
+			mission["science_required"],
+			ResearchData.science,
+		]
+	elif vehicle["capacity_kg"] < total_mass:
 		launch_status.text = "Payload is %s kg. Select a launcher with more lift." % _format_mass(total_mass)
 	elif total_cost > budget:
 		launch_status.text = "%s required; current budget is %s." % [_format_money(total_cost), _format_money(budget)]
@@ -348,7 +379,11 @@ func _update_launch_status(_selected_index: int = -1) -> void:
 			instrument["science"],
 		]
 
-	launch_button.disabled = vehicle["capacity_kg"] < total_mass or total_cost > budget
+	launch_button.disabled = (
+		is_mission_locked
+		or vehicle["capacity_kg"] < total_mass
+		or total_cost > budget
+	)
 
 
 func _select_mission(index: int) -> void:
@@ -362,7 +397,13 @@ func _launch_selected_mission() -> void:
 	var instrument: Dictionary = GameData.INSTRUMENTS[instrument_picker.get_item_metadata(instrument_picker.selected)]
 	var total_mass: int = mission["mass_kg"] + instrument["mass_kg"]
 	var total_cost: int = vehicle["cost"] + instrument["cost"]
-	if vehicle["capacity_kg"] < total_mass or total_cost > budget:
+	if (
+		not _is_mission_unlocked(selected_mission_index)
+		or ResearchData.science < instrument["science_required"]
+		or ResearchData.science < vehicle["science_required"]
+		or vehicle["capacity_kg"] < total_mass
+		or total_cost > budget
+	):
 		_update_launch_status()
 		return
 	var animation_name := StringName(vehicle["animation"])
@@ -371,6 +412,7 @@ func _launch_selected_mission() -> void:
 		return
 
 	budget -= total_cost
+	_refresh_resource_display()
 	pending_mission_index = selected_mission_index
 	pending_mission_reward = mission["reward"]
 	pending_mission_science = mission["science"] + instrument["science"]
@@ -397,11 +439,18 @@ func _complete_launch() -> void:
 	var mission: Dictionary = GameData.MISSIONS[pending_mission_index]
 	if not completed_missions.has(mission["id"]):
 		budget += pending_mission_reward
-		science += pending_mission_science
+		ResearchData.science += pending_mission_science
 		completed_missions.append(mission["id"])
 		if completed_missions.size() < GameData.MISSIONS.size():
 			selected_mission_index = completed_missions.size()
 	_refresh_interface()
+
+
+func _is_mission_unlocked(index: int) -> bool:
+	return (
+		index <= completed_missions.size()
+		and ResearchData.science >= GameData.MISSIONS[index]["science_required"]
+	)
 
 
 func _return_to_mission_screen() -> void:
@@ -443,9 +492,9 @@ func _track_monitor_ui(control: Control) -> void:
 	monitor_ui_nodes.append(control)
 
 
-func _set_monitor_ui_visibility(is_visible: bool) -> void:
+func _set_monitor_ui_visibility(visibility: bool) -> void:
 	for control: Control in monitor_ui_nodes:
-		control.visible = is_visible
+		control.visible = visibility
 	monitor_ui_flickering = false
 	monitor_flicker_frames = 0
 
@@ -495,14 +544,15 @@ func _clear_container(container: Node) -> void:
 		child.queue_free()
 
 
-func _make_label(text: String, size: int, color: Color) -> Label:
+func _make_label(text: String, label_size: int, color: Color) -> Label:
 	var label := Label.new()
 	label.text = text
-	label.add_theme_font_size_override("font_size", size)
+	label.add_theme_font_size_override("font_size", label_size)
 	label.add_theme_color_override("font_color", color)
 	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	label.clip_text = true
 	label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	label.custom_minimum_size.y = label_size+10
 	return label
 
 
@@ -546,9 +596,9 @@ func _button_style(highlighted: bool) -> StyleBoxFlat:
 
 func _format_money(amount: int) -> String:
 	if amount < 1_000_000:
-		return "$%dK" % int(amount / 1_000)
+		return "$%dK" % int(amount / 1_000.0)
 	if amount % 1_000_000 == 0:
-		return "$%d M" % int(amount / 1_000_000)
+		return "$%d M" % int(amount / 1_000_000.0)
 	return "$%.1f M" % (float(amount) / 1_000_000.0)
 
 
