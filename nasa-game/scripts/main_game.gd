@@ -345,23 +345,10 @@ func _refresh_mission_details() -> void:
 	detail_column.add_child(launch_vehicle_picker)
 
 	instrument_picker.select(0)
-	launch_vehicle_picker.select(_default_vehicle_index(mission, GameData.INSTRUMENTS[0]))
+	launch_vehicle_picker.select(0)
 	instrument_picker.item_selected.connect(_update_launch_status)
 	launch_vehicle_picker.item_selected.connect(_update_launch_status)
 	_update_launch_status()
-
-
-func _default_vehicle_index(mission: Dictionary, instrument: Dictionary) -> int:
-	var required_mass: int = mission["mass_kg"] + instrument["mass_kg"]
-	var fallback_index: int = 0
-	for index in range(GameData.VEHICLES.size()):
-		var vehicle: Dictionary = GameData.VEHICLES[index]
-		if ResearchData.science < vehicle["science_required"]:
-			continue
-		fallback_index = index
-		if vehicle["capacity_kg"] >= required_mass:
-			return index
-	return fallback_index
 
 
 func _update_launch_status(_selected_index: int = -1) -> void:
@@ -432,6 +419,7 @@ func _start_launch_sequence(vehicle: Dictionary, mission_success: bool) -> void:
 	launch_sequence.start_launch(
 		StringName(vehicle["animation"]),
 		GameData.MISSIONS[pending_mission_index]["name"],
+		StringName(GameData.MISSIONS[pending_mission_index]["id"]),
 		mission_success,
 		reduce_shake
 	)

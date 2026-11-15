@@ -5,6 +5,8 @@ signal finished
 
 const GameData = preload("res://Scripts/game_data.gd")
 const MainGame = preload("res://Scripts/main_game.gd")
+const EARTH_LAUNCH_BACKGROUND: Texture2D = preload("res://assets/RocketSimulation.png")
+const MARS_LAUNCH_BACKGROUND: Texture2D = preload("res://assets/RocketSimulation_ToMars.png")
 
 const TEXT: Color = Color("#edf4fb")
 const LAUNCH_IDLE_DURATION: float = 1.0
@@ -42,13 +44,12 @@ const ROCKET_ANIMATION_FRAMES: Dictionary = {
 		"res://assets/small rocket/LargeOrbitRocket8.png.png",
 	],
 	"super_heavy": [
-		"res://assets/small rocket/LargeOrbitRocket1.png.png",
-		"res://assets/small rocket/LargeOrbitRocket2.png.png",
-		"res://assets/small rocket/LargeOrbitRocket3.png.png",
-		"res://assets/small rocket/LargeOrbitRocket4.png.png",
-		"res://assets/small rocket/LargeOrbitRocket6.png.png",
-		"res://assets/small rocket/LargeOrbitRocket7.png.png",
-		"res://assets/small rocket/LargeOrbitRocket8.png.png",
+		"res://assets/small rocket/XLOrbitRocket1.png.png",
+		"res://assets/small rocket/XLOrbitRocket2.png.png",
+		"res://assets/small rocket/XLOrbitRocket3.png.png",
+		"res://assets/small rocket/XLOrbitRocket4.png.png",
+		"res://assets/small rocket/XLOrbitRocket5.png.png",
+		"res://assets/small rocket/XLOrbitRocket6.png.png",
 	],
 }
 
@@ -76,14 +77,12 @@ func _ready() -> void:
 
 func _build_launch_screen() -> void:
 	launch_background = Sprite2D.new()
-	launch_background.texture = preload("res://assets/RocketSimulation.png")
+	launch_background.texture = EARTH_LAUNCH_BACKGROUND
 	launch_background.centered = true
 	launch_background.scale = Vector2(10.0, 10.0)
 	launch_background.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	launch_background.visible = false
-	var scaled_background_height: float = launch_background.texture.get_height() * launch_background.scale.y
-	launch_background_start_y = GameData.VIEWPORT_HEIGHT - scaled_background_height / 2.0
-	launch_background_end_y = scaled_background_height / 2.0
+	_update_launch_background_bounds()
 	add_child(launch_background)
 	
 	var sprite_frames := SpriteFrames.new()
@@ -147,6 +146,7 @@ func is_running() -> bool:
 func start_launch(
 	animation_name: StringName,
 	mission_name: String,
+	mission_id: StringName,
 	mission_succeeded: bool,
 	reduce_shake_enabled: bool
 ) -> void:
@@ -162,6 +162,10 @@ func start_launch(
 	launch_sprite.rotation = 0.0
 	rotate_tween_started = false
 	launch_sprite.position = Vector2(GameData.VIEWPORT_WIDTH / 2.0, LAUNCH_START_Y)
+	launch_background.texture = (
+		MARS_LAUNCH_BACKGROUND if mission_id == &"mars_colony" else EARTH_LAUNCH_BACKGROUND
+	)
+	_update_launch_background_bounds()
 	launch_background.position = Vector2(GameData.VIEWPORT_WIDTH / 2.0, launch_background_start_y)
 	launch_background.show()
 	launch_sprite.show()
@@ -173,6 +177,14 @@ func start_launch(
 	launch_phase_elapsed = 0.0
 	launch_shake_time = 0.0
 	launch_in_progress = true
+
+
+func _update_launch_background_bounds() -> void:
+	var scaled_background_height: float = (
+		launch_background.texture.get_height() * launch_background.scale.y
+	)
+	launch_background_start_y = GameData.VIEWPORT_HEIGHT - scaled_background_height / 2.0
+	launch_background_end_y = scaled_background_height / 2.0
 
 
 func _process(delta: float) -> void:
@@ -302,4 +314,3 @@ func _Mission_Summary(success) -> void:
 	
 	if success == false:
 		launch_message.text = "Mission Failed"
-		
