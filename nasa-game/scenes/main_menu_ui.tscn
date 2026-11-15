@@ -47,6 +47,13 @@ Button/styles/hover = SubResource("StyleBoxFlat_towyk")
 Button/styles/normal = SubResource("StyleBoxFlat_d2op2")
 Button/styles/pressed = SubResource("StyleBoxFlat_j5441")
 
+[sub_resource type="InputEventKey" id="InputEventKey_towyk"]
+device = -1
+keycode = 4194305
+
+[sub_resource type="Shortcut" id="Shortcut_towyk"]
+events = [SubResource("InputEventKey_towyk")]
+
 [sub_resource type="SpriteFrames" id="SpriteFrames_yf5fn"]
 animations = [{
 "frames": [{
@@ -61,7 +68,7 @@ animations = [{
 }],
 "loop": true,
 "name": &"default",
-"speed": 5.0
+"speed": 3.0
 }]
 
 [node name="Main Menu UI" type="Control" unique_id=1701502392]
@@ -112,6 +119,7 @@ text = "Settings"
 
 [node name="Quit Button" type="Button" parent="CenterContainer/VBoxContainer" unique_id=1735881239]
 layout_mode = 2
+shortcut = SubResource("Shortcut_towyk")
 text = "Exit to Desktop"
 
 [node name="ConfirmationDialog" type="ConfirmationDialog" parent="CenterContainer/VBoxContainer/Quit Button" unique_id=370776548]
