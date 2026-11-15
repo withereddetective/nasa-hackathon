@@ -21,6 +21,7 @@ var mission_scroll: ScrollContainer
 var mission_summary: VBoxContainer
 var detail_scroll: ScrollContainer
 var detail_column: VBoxContainer
+var launch_action_row: HBoxContainer
 var launch_vehicle_picker: OptionButton
 var instrument_picker: OptionButton
 var launch_button: Button
@@ -121,6 +122,25 @@ func _build_interface() -> void:
 	detail_column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	detail_column.add_theme_constant_override("separation", 4)
 	detail_scroll.add_child(detail_column)
+
+	launch_action_row = HBoxContainer.new()
+	launch_action_row.position = Vector2(380, 426)
+	launch_action_row.size = Vector2(420, 42)
+	launch_action_row.add_theme_constant_override("separation", 8)
+	add_child(launch_action_row)
+	_track_monitor_ui(launch_action_row)
+
+	launch_status = _make_label("", 10, DETAIL_MUTED)
+	launch_status.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	launch_status.custom_minimum_size = Vector2(0, 40)
+	launch_status.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	launch_action_row.add_child(launch_status)
+
+	launch_button = _make_button("LAUNCH MISSION", true, DETAIL_TEXT)
+	launch_button.custom_minimum_size = Vector2(170, 36)
+	launch_button.size_flags_horizontal = Control.SIZE_SHRINK_END
+	launch_button.pressed.connect(_launch_selected_mission)
+	launch_action_row.add_child(launch_button)
 
 	action_bar = HBoxContainer.new()
 	action_bar.position = Vector2(110, 482)
@@ -244,7 +264,7 @@ func _refresh_mission_list() -> void:
 		var button := _make_button(button_text, index == selected_mission_index)
 		button.custom_minimum_size = Vector2(225, 52)
 		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		button.disabled = is_order_locked or is_science_locked
+		button.disabled = is_order_locked
 		button.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 		var mission_index := index
 		button.pressed.connect(func() -> void: _select_mission(mission_index))
@@ -297,7 +317,6 @@ func _refresh_mission_details() -> void:
 			]
 		)
 		instrument_picker.set_item_metadata(index, index)
-		instrument_picker.set_item_disabled(index, is_locked)
 	detail_column.add_child(instrument_picker)
 
 	detail_column.add_child(_make_label("LAUNCH VEHICLE  /  RESEARCH UNLOCKS", 10, DETAIL_TEXT))
@@ -318,16 +337,8 @@ func _refresh_mission_details() -> void:
 			]
 		)
 		launch_vehicle_picker.set_item_metadata(index, index)
-		launch_vehicle_picker.set_item_disabled(index, is_locked)
 	detail_column.add_child(launch_vehicle_picker)
 
-	launch_status = _make_label("", 10, DETAIL_MUTED)
-	launch_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	detail_column.add_child(launch_status)
-	launch_button = _make_button("LAUNCH MISSION", true, DETAIL_TEXT)
-	launch_button.custom_minimum_size = Vector2(160, 30)
-	launch_button.pressed.connect(_launch_selected_mission)
-	detail_column.add_child(launch_button)
 	instrument_picker.select(0)
 	launch_vehicle_picker.select(_default_vehicle_index(mission, GameData.INSTRUMENTS[0]))
 	instrument_picker.item_selected.connect(_update_launch_status)
@@ -352,31 +363,27 @@ func _update_launch_status(_selected_index: int = -1) -> void:
 	var mission: Dictionary = GameData.MISSIONS[selected_mission_index]
 	var vehicle: Dictionary = GameData.VEHICLES[launch_vehicle_picker.get_item_metadata(launch_vehicle_picker.selected)]
 	var instrument: Dictionary = GameData.INSTRUMENTS[instrument_picker.get_item_metadata(instrument_picker.selected)]
-	var total_mass: int = mission["mass_kg"] + instrument["mass_kg"]
 	var total_cost: int = vehicle["cost"] + instrument["cost"]
 	var is_complete: bool = completed_missions.has(mission["id"])
-	var is_mission_locked: bool = not _is_mission_unlocked(selected_mission_index)
+	var is_order_locked: bool = not _is_mission_order_unlocked(selected_mission_index)
+	var failure_reason := _mission_failure_reason(mission, vehicle, instrument)
 
-	if is_mission_locked:
-		launch_status.text = "Requires %d science; current research is %d." % [
-			mission["science_required"],
-			ResearchData.science,
-		]
-	elif vehicle["capacity_kg"] < total_mass:
-		launch_status.text = "Payload is %s kg. Select a launcher with more lift." % _format_mass(total_mass)
+	if is_order_locked:
+		launch_status.text = "Complete previous missions to unlock this mission."
 	elif total_cost > budget:
 		launch_status.text = "%s required; current budget is %s." % [_format_money(total_cost), _format_money(budget)]
+	elif not failure_reason.is_empty():
+		launch_status.text = "Launch will fail: " + failure_reason
 	elif is_complete:
 		launch_status.text = "Mission complete. Replay available; no repeat money or science."
 	else:
 		launch_status.text = "Payload %s kg  /  Instrument science +%d pts" % [
-			_format_mass(total_mass),
+			_format_mass(mission["mass_kg"] + instrument["mass_kg"]),
 			instrument["science"],
 		]
 
 	launch_button.disabled = (
-		is_mission_locked
-		or vehicle["capacity_kg"] < total_mass
+		is_order_locked
 		or total_cost > budget
 	)
 
@@ -388,15 +395,13 @@ func _select_mission(index: int) -> void:
 
 func _launch_selected_mission() -> void:
 	var mission: Dictionary = GameData.MISSIONS[selected_mission_index]
-	var vehicle: Dictionary = GameData.VEHICLES[launch_vehicle_picker.get_item_metadata(launch_vehicle_picker.selected)]
-	var instrument: Dictionary = GameData.INSTRUMENTS[instrument_picker.get_item_metadata(instrument_picker.selected)]
-	var total_mass: int = mission["mass_kg"] + instrument["mass_kg"]
+	var vehicle_index: int = launch_vehicle_picker.get_item_metadata(launch_vehicle_picker.selected)
+	var instrument_index: int = instrument_picker.get_item_metadata(instrument_picker.selected)
+	var vehicle: Dictionary = GameData.VEHICLES[vehicle_index]
+	var instrument: Dictionary = GameData.INSTRUMENTS[instrument_index]
 	var total_cost: int = vehicle["cost"] + instrument["cost"]
 	if (
-		not _is_mission_unlocked(selected_mission_index)
-		or ResearchData.science < instrument["science_required"]
-		or ResearchData.science < vehicle["science_required"]
-		or vehicle["capacity_kg"] < total_mass
+		not _is_mission_order_unlocked(selected_mission_index)
 		or total_cost > budget
 	):
 		_update_launch_status()
@@ -411,16 +416,18 @@ func _launch_selected_mission() -> void:
 	pending_mission_index = selected_mission_index
 	pending_mission_reward = mission["reward"]
 	pending_mission_science = mission["science"] + instrument["science"]
-	_start_launch_sequence(vehicle)
+	var mission_success: bool = _mission_failure_reason(mission, vehicle, instrument).is_empty()
+	_start_launch_sequence(vehicle, mission_success)
 
 
-func _start_launch_sequence(vehicle: Dictionary) -> void:
+func _start_launch_sequence(vehicle: Dictionary, mission_success: bool) -> void:
 	_set_monitor_ui_visibility(false)
 	action_bar.hide()
 	game_background.hide()
 	launch_sequence.start_launch(
 		StringName(vehicle["animation"]),
 		GameData.MISSIONS[pending_mission_index]["name"],
+		mission_success,
 		reduce_shake
 	)
 
@@ -439,11 +446,21 @@ func _complete_launch() -> void:
 			selected_mission_index = completed_missions.size()
 	_refresh_interface()
 
-func _is_mission_unlocked(index: int) -> bool:
-	return (
-		index <= completed_missions.size()
-		and ResearchData.science >= GameData.MISSIONS[index]["science_required"]
-	)
+func _is_mission_order_unlocked(index: int) -> bool:
+	return index <= completed_missions.size()
+
+
+func _mission_failure_reason(mission: Dictionary, vehicle: Dictionary, instrument: Dictionary) -> String:
+	var total_mass: int = mission["mass_kg"] + instrument["mass_kg"]
+	if vehicle["capacity_kg"] < total_mass:
+		return "payload exceeds launcher capacity."
+	if ResearchData.science < mission["science_required"]:
+		return "mission requires %d science." % mission["science_required"]
+	if ResearchData.science < vehicle["science_required"]:
+		return "launcher requires %d science." % vehicle["science_required"]
+	if ResearchData.science < instrument["science_required"]:
+		return "instrument requires %d science." % instrument["science_required"]
+	return ""
 
 func _return_to_mission_screen() -> void:
 	game_background.show()

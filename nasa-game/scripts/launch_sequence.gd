@@ -10,6 +10,10 @@ const LAUNCH_SLOWDOWN_DURATION: float = 2.5
 const LAUNCH_COMPLETE_DURATION: float = 2.0
 const LAUNCH_START_Y: float = 530.0
 const LAUNCH_TOP_Y: float = 64.0
+const LAUNCH_FAILURE_SLOWDOWN_DURATION: float = 1.5
+const LAUNCH_FAILURE_FALL_DURATION: float = 2.5
+const LAUNCH_FAILURE_PROGRESS: float = 0.55
+const REDUCED_SHAKE_FACTOR: float = 0.1
 
 const ROCKET_ANIMATION_FRAMES: Dictionary = {
 	"small_lift": [
@@ -53,12 +57,15 @@ var launch_sprite: AnimatedSprite2D
 var launch_message: Label
 var launch_in_progress: bool = false
 var reduce_shake: bool = false
+var mission_success: bool = true
 var launch_phase: StringName = &""
 var launch_phase_elapsed: float = 0.0
 var launch_shake_time: float = 0.0
 var launch_animation_name: StringName = &""
 var launch_ascent_duration: float = 0.0
 var rotate_tween_started: bool = false
+var failure_fall_start_y: float = 0.0
+var failure_fall_start_background_y: float = 0.0
 
 
 func _ready() -> void:
@@ -135,12 +142,18 @@ func is_running() -> bool:
 	return launch_in_progress
 
 
-func start_launch(animation_name: StringName, mission_name: String, reduce_shake_enabled: bool) -> void:
+func start_launch(
+	animation_name: StringName,
+	mission_name: String,
+	mission_succeeded: bool,
+	reduce_shake_enabled: bool
+) -> void:
 	if not has_animation(animation_name):
 		push_error("The selected launch vehicle has no available rocket animation.")
 		return
 
 	reduce_shake = reduce_shake_enabled
+	mission_success = mission_succeeded
 	launch_animation_name = animation_name
 	launch_sprite.animation = launch_animation_name
 	launch_sprite.stop()
@@ -171,32 +184,45 @@ func _process(delta: float) -> void:
 				launch_sprite.play(launch_animation_name)
 				launch_message.text = "IGNITION  /  ASCENT"
 		&"ascent":
-			var progress: float = minf(launch_phase_elapsed / launch_ascent_duration, 1.0)
+			var ascent_duration: float = launch_ascent_duration
+			var destination_progress: float = 1.0
+			if not mission_success:
+				ascent_duration *= LAUNCH_FAILURE_PROGRESS
+				destination_progress = LAUNCH_FAILURE_PROGRESS
+			var progress: float = minf(launch_phase_elapsed / ascent_duration, 1.0)
 			var eased_progress: float = 3.0 * progress * progress - 2.0 * progress * progress * progress
-			launch_background.position.y = lerpf(launch_background_start_y, launch_background_end_y, eased_progress)
-			launch_sprite.position.y = lerpf(LAUNCH_START_Y, LAUNCH_TOP_Y, eased_progress)
-			var shake_multiplier: float = 0.35 if reduce_shake else 1.0
+			var path_progress: float = eased_progress * destination_progress
+			launch_background.position.y = lerpf(launch_background_start_y, launch_background_end_y, path_progress)
+			launch_sprite.position.y = lerpf(LAUNCH_START_Y, LAUNCH_TOP_Y, path_progress)
+			var shake_multiplier: float = REDUCED_SHAKE_FACTOR if reduce_shake else 1.0
 			var shake_amplitude: float = lerpf(11.0, 0.0, progress) * shake_multiplier
 			var shake_speed: float = lerpf(18.0, 2.0, progress)
 			_apply_launch_shake(shake_amplitude, shake_speed, delta)
-			if launch_phase_elapsed >= launch_ascent_duration:
-				launch_background.position.y = launch_background_end_y
-				launch_sprite.position.y = LAUNCH_TOP_Y
+			if launch_phase_elapsed >= ascent_duration:
+				launch_background.position.y = lerpf(
+					launch_background_start_y,
+					launch_background_end_y,
+					destination_progress
+				)
+				launch_sprite.position.y = lerpf(LAUNCH_START_Y, LAUNCH_TOP_Y, destination_progress)
 				launch_sprite.pause()
-				launch_phase = &"slowdown"
 				launch_phase_elapsed = 0.0
-				launch_message.text = "ASCENT COMPLETE  /  VEHICLE COASTING"
+				if mission_success:
+					launch_phase = &"slowdown"
+					launch_message.text = "ASCENT COMPLETE  /  VEHICLE COASTING"
+				else:
+					launch_phase = &"failure_slowdown"
+					launch_message.text = "ENGINE FAILURE  /  ASCENT ABORTED"
 			elif launch_phase_elapsed >= launch_ascent_duration - 1:
 				if not rotate_tween_started:
 					rotate_tween_started = true
 					var rotate_tween: Tween = get_tree().create_tween()
 					rotate_tween.set_ease(Tween.EASE_IN_OUT)
 					rotate_tween.tween_property(launch_sprite, "rotation", launch_sprite.rotation + PI, 1)
-				
 		&"slowdown":
 			var progress: float = minf(launch_phase_elapsed / LAUNCH_SLOWDOWN_DURATION, 1.0)
 			launch_sprite.position.y = LAUNCH_TOP_Y
-			var shake_multiplier: float = 0.35 if reduce_shake else 1.0
+			var shake_multiplier: float = REDUCED_SHAKE_FACTOR if reduce_shake else 1.0
 			var shake_amplitude: float = sin(progress * PI) * 5.0 * shake_multiplier
 			var shake_speed: float = lerpf(8.0, 1.0, progress)
 			_apply_launch_shake(shake_amplitude, shake_speed, delta)
@@ -207,6 +233,37 @@ func _process(delta: float) -> void:
 				launch_phase_elapsed = 0.0
 				launch_message.text = "MISSION COMPLETE"
 				award_mission.emit()
+		&"failure_slowdown":
+			var progress: float = minf(launch_phase_elapsed / LAUNCH_FAILURE_SLOWDOWN_DURATION, 1.0)
+			var shake_multiplier: float = REDUCED_SHAKE_FACTOR if reduce_shake else 1.0
+			var shake_amplitude: float = lerpf(4.0, 8.0, progress) * shake_multiplier
+			var shake_speed: float = lerpf(7.0, 3.0, progress)
+			_apply_launch_shake(shake_amplitude, shake_speed, delta)
+			if launch_phase_elapsed >= LAUNCH_FAILURE_SLOWDOWN_DURATION:
+				failure_fall_start_y = launch_sprite.position.y
+				failure_fall_start_background_y = launch_background.position.y
+				launch_phase = &"failure_fall"
+				launch_phase_elapsed = 0.0
+				launch_message.text = "ROCKET FALLING BACK TO EARTH"
+		&"failure_fall":
+			var progress: float = minf(launch_phase_elapsed / LAUNCH_FAILURE_FALL_DURATION, 1.0)
+			var eased_progress: float = progress * progress
+			launch_sprite.position.y = lerpf(failure_fall_start_y, LAUNCH_START_Y, eased_progress)
+			launch_background.position.y = lerpf(
+				failure_fall_start_background_y,
+				launch_background_start_y,
+				eased_progress
+			)
+			var shake_multiplier: float = REDUCED_SHAKE_FACTOR if reduce_shake else 1.0
+			var shake_amplitude: float = lerpf(8.0, 14.0, progress) * shake_multiplier
+			var shake_speed: float = lerpf(4.0, 12.0, progress)
+			_apply_launch_shake(shake_amplitude, shake_speed, delta)
+			if launch_phase_elapsed >= LAUNCH_FAILURE_FALL_DURATION:
+				launch_sprite.position = Vector2(GameData.VIEWPORT_WIDTH / 2.0, LAUNCH_START_Y)
+				launch_background.position.y = launch_background_start_y
+				launch_phase = &"complete"
+				launch_phase_elapsed = 0.0
+				launch_message.text = "MISSION FAILED"
 		&"complete":
 			if launch_phase_elapsed >= LAUNCH_COMPLETE_DURATION:
 				launch_in_progress = false
@@ -220,21 +277,3 @@ func _process(delta: float) -> void:
 func _apply_launch_shake(amplitude: float, shake_speed: float, delta: float) -> void:
 	launch_shake_time += delta * shake_speed
 	launch_sprite.position.x = GameData.VIEWPORT_WIDTH / 2.0 + sin(launch_shake_time) * amplitude
-
-
-func _Mission_Result(selected_mission_index: int, selected_vehicle_index: int ) -> bool: 
-
-	var success: bool = true
-
-	var current_Mission = GameData.MISSIONS[selected_mission_index]
-	var vehicle = GameData.VEHICLES[selected_vehicle_index]
-	
-	if vehicle["capacity_kg"] < current_Mission["mass.kg"] || ResearchData.science < current_Mission["science_required"]:
-		success = false
-		
-	return success
-
-func _Mission_Summary(success) -> void:
-	
-	if success == false:
-		launch_message.text = "Mission Failed"
