@@ -211,3 +211,21 @@ func _process(delta: float) -> void:
 func _apply_launch_shake(amplitude: float, shake_speed: float, delta: float) -> void:
 	launch_shake_time += delta * shake_speed
 	launch_sprite.position.x = GameData.VIEWPORT_WIDTH / 2.0 + sin(launch_shake_time) * amplitude
+
+
+func _Mission_Result(selected_mission_index: int, selected_vehicle_index: int ) -> bool: 
+
+	var success: bool = true
+
+	var current_Mission = GameData.MISSIONS[selected_mission_index]
+	var vehicle = GameData.VEHICLES[selected_vehicle_index]
+	
+	if vehicle["capacity_kg"] < current_Mission["mass.kg"] || ResearchData.science < current_Mission["science_required"]:
+		success = false
+		
+	return success
+
+func _Mission_Summary(success) -> void:
+	
+	if success == false:
+		launch_message.text = "Mission Failed"

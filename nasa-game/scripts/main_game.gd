@@ -610,3 +610,4 @@ func _format_mass(mass: int) -> String:
 			formatted += ","
 		formatted += digits[index]
 	return formatted
+	

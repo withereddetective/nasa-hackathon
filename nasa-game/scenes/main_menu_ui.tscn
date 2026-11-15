@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://bvao2l0ohr3ef"]
 
-[ext_resource type="Script" uid="uid://bekykkrdxqalv" path="res://scripts/main_menu_ui.gd" id="1_rayio"]
+[ext_resource type="Script" uid="uid://bekykkrdxqalv" path="res://Scripts/main_menu_ui.gd" id="1_rayio"]
 [ext_resource type="Texture2D" uid="uid://c1gxlsv41dchh" path="res://assets/small rocket/MainMenu-1.png.png" id="2_towyk"]
 [ext_resource type="Texture2D" uid="uid://heherfb2wegu" path="res://assets/small rocket/MainMenu-2.png.png" id="3_j5441"]
 [ext_resource type="Texture2D" uid="uid://btmwfoyg4bcg" path="res://assets/small rocket/MainMenu-3.png.png" id="4_vxllw"]
@@ -17,7 +17,7 @@ animations = [{
 "duration": 2.0,
 "texture": ExtResource("4_vxllw")
 }],
-"loop": 1,
+"loop": true,
 "name": &"default",
 "speed": 5.0
 }]
