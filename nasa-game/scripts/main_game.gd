@@ -35,9 +35,6 @@ var action_bar: HBoxContainer
 var reduce_shake: bool = false
 var settings_open: bool = false
 var monitor_ui_nodes: Array[Control] = []
-var monitor_flicker_timer: float = 4.0
-var monitor_flicker_frames: int = 0
-var monitor_ui_flickering: bool = false
 var launch_sequence: LaunchSequence
 var pending_mission_index: int = -1
 var pending_mission_reward: int = 0
@@ -56,10 +53,8 @@ func _ready() -> void:
 	_refresh_interface()
 
 
-func _process(delta: float) -> void:
-	if launch_sequence.is_running():
-		return
-	_update_monitor_flicker(delta)
+func _process(_delta: float) -> void:
+	pass
 
 
 func _build_interface() -> void:
@@ -420,7 +415,6 @@ func _launch_selected_mission() -> void:
 
 
 func _start_launch_sequence(vehicle: Dictionary) -> void:
-	_reset_monitor_flicker()
 	_set_monitor_ui_visibility(false)
 	action_bar.hide()
 	game_background.hide()
@@ -445,35 +439,27 @@ func _complete_launch() -> void:
 			selected_mission_index = completed_missions.size()
 	_refresh_interface()
 
-
 func _is_mission_unlocked(index: int) -> bool:
 	return (
 		index <= completed_missions.size()
 		and ResearchData.science >= GameData.MISSIONS[index]["science_required"]
 	)
 
-
 func _return_to_mission_screen() -> void:
 	game_background.show()
 	action_bar.show()
 	_set_monitor_ui_visibility(true)
-	_reset_monitor_flicker()
-
 
 func _reveal_mission_button(button: Control) -> void:
 	mission_scroll.ensure_control_visible(button)
 
-
 func _show_quit_dialog() -> void:
 	quit_dialog.popup_centered()
-
 
 func _quit_game() -> void:
 	get_tree().quit()
 
-
 func _show_settings() -> void:
-	_reset_monitor_flicker()
 	settings_open = true
 	_set_monitor_ui_visibility(false)
 	settings_button.hide()
@@ -485,42 +471,14 @@ func _hide_settings() -> void:
 	_set_monitor_ui_visibility(true)
 	settings_button.show()
 	settings_panel.hide()
-	_reset_monitor_flicker()
 
 
 func _track_monitor_ui(control: Control) -> void:
 	monitor_ui_nodes.append(control)
 
-
 func _set_monitor_ui_visibility(visibility: bool) -> void:
 	for control: Control in monitor_ui_nodes:
 		control.visible = visibility
-	monitor_ui_flickering = false
-	monitor_flicker_frames = 0
-
-
-func _reset_monitor_flicker() -> void:
-	_set_monitor_ui_visibility(true)
-	monitor_flicker_timer = randf_range(3.0, 6.0)
-
-
-func _update_monitor_flicker(delta: float) -> void:
-	if settings_open or quit_dialog.visible:
-		return
-
-	if monitor_ui_flickering:
-		monitor_flicker_frames -= 1
-		if monitor_flicker_frames <= 0:
-			monitor_ui_flickering = false
-			_set_monitor_ui_visibility(true)
-			monitor_flicker_timer = randf_range(3.0, 6.0)
-		return
-
-	monitor_flicker_timer -= delta
-	if monitor_flicker_timer <= 0.0:
-		_set_monitor_ui_visibility(false)
-		monitor_ui_flickering = true
-		monitor_flicker_frames = randi_range(2, 4)
 
 
 func _on_settings_volume_changed(value: float) -> void:
