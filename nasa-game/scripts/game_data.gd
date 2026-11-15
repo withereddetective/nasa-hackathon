@@ -1,4 +1,4 @@
-extends RefCounted
+extends Node
 
 const VIEWPORT_WIDTH: int = 860
 const VIEWPORT_HEIGHT: int = 640

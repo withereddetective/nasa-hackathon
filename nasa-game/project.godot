@@ -10,7 +10,7 @@ config_version=5
 
 [application]
 
-config/name="nasa game"
+config/name="Missions to Mars"
 run/main_scene="uid://bvao2l0ohr3ef"
 config/features=PackedStringArray("4.7", "Forward Plus")
 config/icon="res://icon.svg"

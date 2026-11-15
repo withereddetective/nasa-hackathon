@@ -3,8 +3,8 @@ extends Node2D
 signal award_mission
 signal finished
 
-const GameData = preload("res://Scripts/game_data.gd")
-const MainGame = preload("res://Scripts/main_game.gd")
+const GameData = preload("res://scripts/game_data.gd")
+const MainGame = preload("res://scripts/main_game.gd")
 const EARTH_LAUNCH_BACKGROUND: Texture2D = preload("res://assets/RocketSimulation.png")
 const MARS_LAUNCH_BACKGROUND: Texture2D = preload("res://assets/RocketSimulation_ToMars.png")
 

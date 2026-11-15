@@ -2,7 +2,7 @@
 
 [ext_resource type="Texture2D" uid="uid://4e3kutii11xo" path="res://assets/SkillTree_SelectionNode-1.png" id="1_axbld"]
 [ext_resource type="Texture2D" uid="uid://cvfc43er3ikb4" path="res://assets/SkillTree_SelectionNode-2.png.png" id="2_c2tab"]
-[ext_resource type="Script" uid="uid://mpgvb1mf6l3w" path="res://Scripts/UI/skill_tree_button.gd" id="3_c2tab"]
+[ext_resource type="Script" uid="uid://mpgvb1mf6l3w" path="res://scripts/UI/skill_tree_button.gd" id="3_c2tab"]
 [ext_resource type="Texture2D" uid="uid://j7yfsrj4pkwo" path="res://assets/9patch.png" id="4_foaik"]
 
 [node name="TextureButton" type="TextureButton" unique_id=781245054 node_paths=PackedStringArray("info_box_control", "info_box_description", "info_box_button")]

@@ -6,8 +6,8 @@ const ACCENT: Color = Color("#72e0ad")
 const GOLD: Color = Color("#f4c76b")
 const DETAIL_TEXT: Color = Color("#15202b")
 const DETAIL_MUTED: Color = Color("#34414c")
-const GameData = preload("res://Scripts/game_data.gd")
-const LaunchSequence = preload("res://Scripts/launch_sequence.gd")
+const GameData = preload("res://scripts/game_data.gd")
+const LaunchSequence = preload("res://scripts/launch_sequence.gd")
 const MAIN_MENU_BACKGROUND_TEXTURES: Array[String] = [
 	"res://assets/small rocket/MainMenu-1.png.png",
 	"res://assets/small rocket/MainMenu-2.png.png",

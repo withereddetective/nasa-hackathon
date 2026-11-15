@@ -106,7 +106,7 @@ layout_mode = 2
 custom_minimum_size = Vector2(250, 50)
 layout_mode = 2
 bbcode_enabled = true
-text = "[font_size=24]Nasa Game Title Idk[/font_size]"
+text = "[font_size=24]Missions to Mars[/font_size]"
 horizontal_alignment = 1
 
 [node name="Start Button" type="Button" parent="CenterContainer/VBoxContainer" unique_id=389737572]

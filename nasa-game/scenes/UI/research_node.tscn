@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://ix8pw1on7gr3"]
 
-[ext_resource type="Script" uid="uid://c5t8pefjyhr4b" path="res://Scripts/UI/research_node.gd" id="1_g85xd"]
+[ext_resource type="Script" uid="uid://c5t8pefjyhr4b" path="res://scripts/UI/research_node.gd" id="1_g85xd"]
 
 [node name="Research Node" type="GraphNode" unique_id=1754126695]
 offset_right = 9.0
