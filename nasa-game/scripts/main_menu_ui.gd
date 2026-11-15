@@ -6,6 +6,7 @@ extends Control
 @onready var volume_slider: HSlider = $SettingsPanel/MarginContainer/VBoxContainer/VolumeSlider
 @onready var fullscreen_check: CheckBox = $SettingsPanel/MarginContainer/VBoxContainer/FullscreenCheck
 @onready var main_menu: CenterContainer = $CenterContainer
+@onready var credits_window: AcceptDialog = $"CenterContainer/VBoxContainer/Credits Button/Window"
 
 func _ready() -> void:
 	#get_tree().paused = true
@@ -53,3 +54,6 @@ func _on_fullscreen_check_toggled(toggled_on: bool) -> void:
 
 func _on_accessibility_check_toggled(toggled_on: bool) -> void:
 	print("Accessibility toggled: ", toggled_on)
+
+func _on_credits_button_pressed() -> void:
+	credits_window.popup_centered()

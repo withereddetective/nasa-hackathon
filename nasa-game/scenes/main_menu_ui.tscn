@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://bvao2l0ohr3ef"]
 
-[ext_resource type="Script" uid="uid://bekykkrdxqalv" path="res://Scripts/main_menu_ui.gd" id="1_rayio"]
+[ext_resource type="Script" uid="uid://bekykkrdxqalv" path="res://scripts/main_menu_ui.gd" id="1_rayio"]
 [ext_resource type="Texture2D" uid="uid://c1gxlsv41dchh" path="res://assets/small rocket/MainMenu-1.png.png" id="2_towyk"]
 [ext_resource type="Texture2D" uid="uid://heherfb2wegu" path="res://assets/small rocket/MainMenu-2.png.png" id="3_j5441"]
 [ext_resource type="Texture2D" uid="uid://btmwfoyg4bcg" path="res://assets/small rocket/MainMenu-3.png.png" id="4_vxllw"]
@@ -66,7 +66,7 @@ animations = [{
 "duration": 2.0,
 "texture": ExtResource("4_vxllw")
 }],
-"loop": true,
+"loop": 1,
 "name": &"default",
 "speed": 3.0
 }]
@@ -116,6 +116,22 @@ text = "Start Game"
 [node name="Settings Button" type="Button" parent="CenterContainer/VBoxContainer" unique_id=1901820162]
 layout_mode = 2
 text = "Settings"
+
+[node name="Credits Button" type="Button" parent="CenterContainer/VBoxContainer" unique_id=762097721]
+layout_mode = 2
+text = "View Credits"
+
+[node name="Window" type="AcceptDialog" parent="CenterContainer/VBoxContainer/Credits Button" unique_id=496111283]
+oversampling_override = 1.0
+title = "Credits"
+initial_position = 2
+ok_button_text = "Thank you Team!"
+dialog_text = "Programming:
+Kyle Haynes
+AleXander Russell
+Michael Grooms
+Art:
+Henry Gonzalez"
 
 [node name="Quit Button" type="Button" parent="CenterContainer/VBoxContainer" unique_id=1735881239]
 layout_mode = 2
@@ -185,6 +201,7 @@ text = "Back"
 
 [connection signal="pressed" from="CenterContainer/VBoxContainer/Start Button" to="." method="_on_start_button_pressed"]
 [connection signal="pressed" from="CenterContainer/VBoxContainer/Settings Button" to="." method="_on_settings_button_pressed"]
+[connection signal="pressed" from="CenterContainer/VBoxContainer/Credits Button" to="." method="_on_credits_button_pressed"]
 [connection signal="pressed" from="CenterContainer/VBoxContainer/Quit Button" to="." method="_on_quit_button_pressed"]
 [connection signal="confirmed" from="CenterContainer/VBoxContainer/Quit Button/ConfirmationDialog" to="." method="_on_confirmation_dialog_confirmed"]
 [connection signal="value_changed" from="SettingsPanel/MarginContainer/VBoxContainer/VolumeSlider" to="." method="_on_volume_slider_value_changed"]
