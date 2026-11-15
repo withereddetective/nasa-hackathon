@@ -9,7 +9,7 @@ const DETAIL_MUTED: Color = Color("#34414c")
 const GameData = preload("res://Scripts/game_data.gd")
 const LaunchSequence = preload("res://Scripts/launch_sequence.gd")
 
-var budget: int = GameData.STARTING_BUDGET
+static var budget: int = GameData.STARTING_BUDGET
 var completed_missions: Array[String] = []
 var selected_mission_index: int = 0
 
