@@ -1,9 +1,51 @@
 [gd_scene format=3 uid="uid://bvao2l0ohr3ef"]
 
-[ext_resource type="Script" uid="uid://bekykkrdxqalv" path="res://scripts/main_menu_ui.gd" id="1_rayio"]
+[ext_resource type="Script" uid="uid://bekykkrdxqalv" path="res://Scripts/main_menu_ui.gd" id="1_rayio"]
 [ext_resource type="Texture2D" uid="uid://c1gxlsv41dchh" path="res://assets/small rocket/MainMenu-1.png.png" id="2_towyk"]
 [ext_resource type="Texture2D" uid="uid://heherfb2wegu" path="res://assets/small rocket/MainMenu-2.png.png" id="3_j5441"]
 [ext_resource type="Texture2D" uid="uid://btmwfoyg4bcg" path="res://assets/small rocket/MainMenu-3.png.png" id="4_vxllw"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_towyk"]
+bg_color = Color(0.29954743, 0.29954746, 0.2995473, 1)
+border_width_left = 5
+border_width_top = 5
+border_width_right = 5
+border_width_bottom = 5
+border_color = Color(0.46929657, 0.46929651, 0.46929651, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_d2op2"]
+bg_color = Color(0.22382355, 0.2238236, 0.22382328, 1)
+border_width_left = 5
+border_width_top = 5
+border_width_right = 5
+border_width_bottom = 5
+border_color = Color(0.46929657, 0.46929651, 0.46929651, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_j5441"]
+bg_color = Color(0.117109306, 0.11710932, 0.11710926, 1)
+border_width_left = 5
+border_width_top = 5
+border_width_right = 5
+border_width_bottom = 5
+border_color = Color(0.32915828, 0.32915843, 0.32915837, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+shadow_size = 5
+
+[sub_resource type="Theme" id="Theme_72e8q"]
+Button/styles/hover = SubResource("StyleBoxFlat_towyk")
+Button/styles/normal = SubResource("StyleBoxFlat_d2op2")
+Button/styles/pressed = SubResource("StyleBoxFlat_j5441")
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_yf5fn"]
 animations = [{
@@ -32,6 +74,7 @@ anchor_bottom = 0.5
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 1
+theme = SubResource("Theme_72e8q")
 script = ExtResource("1_rayio")
 
 [node name="CenterContainer" type="CenterContainer" parent="." unique_id=1046037896]
