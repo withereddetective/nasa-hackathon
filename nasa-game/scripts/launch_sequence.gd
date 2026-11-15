@@ -58,6 +58,7 @@ var launch_phase_elapsed: float = 0.0
 var launch_shake_time: float = 0.0
 var launch_animation_name: StringName = &""
 var launch_ascent_duration: float = 0.0
+var rotate_tween_started: bool = false
 
 
 func _ready() -> void:
@@ -75,7 +76,7 @@ func _build_launch_screen() -> void:
 	launch_background_start_y = GameData.VIEWPORT_HEIGHT - scaled_background_height / 2.0
 	launch_background_end_y = scaled_background_height / 2.0
 	add_child(launch_background)
-
+	
 	var sprite_frames := SpriteFrames.new()
 	sprite_frames.clear_all()
 	for animation_key: String in ROCKET_ANIMATION_FRAMES.keys():
@@ -106,6 +107,7 @@ func _build_launch_screen() -> void:
 	launch_sprite.scale = Vector2.ONE
 	launch_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	launch_sprite.visible = false
+	launch_sprite.rotation = 0
 	add_child(launch_sprite)
 
 	launch_message = Label.new()
@@ -184,6 +186,13 @@ func _process(delta: float) -> void:
 				launch_phase = &"slowdown"
 				launch_phase_elapsed = 0.0
 				launch_message.text = "ASCENT COMPLETE  /  VEHICLE COASTING"
+			elif launch_phase_elapsed >= launch_ascent_duration - 1:
+				if not rotate_tween_started:
+					rotate_tween_started = true
+					var rotate_tween: Tween = get_tree().create_tween()
+					rotate_tween.set_ease(Tween.EASE_IN_OUT)
+					rotate_tween.tween_property(launch_sprite, "rotation", launch_sprite.rotation + PI, 1)
+				
 		&"slowdown":
 			var progress: float = minf(launch_phase_elapsed / LAUNCH_SLOWDOWN_DURATION, 1.0)
 			launch_sprite.position.y = LAUNCH_TOP_Y
